@@ -143,10 +143,6 @@ EM_JS(void, canvas_draw_data, (int* image, int nx, int ny), {
 #endif
 
 int main() {
-    int threads = std::min((int)thread::hardware_concurrency(), 8);
-    cout << "hardware_concurrency: " << threads << std::endl;
-    WorkerGroup scanline_workers;
-
     hitable *list[5];
     float R = cos(M_PI/4);
     list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
@@ -202,6 +198,10 @@ int main() {
             image_sample_count[idx] = n_samples;
         }
     };
+
+    int threads = std::min((int)thread::hardware_concurrency(), 8);
+    cout << "hardware_concurrency: " << threads << std::endl;
+    WorkerGroup scanline_workers;
 
     for (int n = 0; n < threads; ++n)
     {
