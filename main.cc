@@ -82,12 +82,13 @@ hitable *random_scene() {
     return new hitable_list(list,i);
 }
 
+const int nx = 1200;
+const int ny = 800;
+const int ns = 10;
+
+inline int rgb_index(int x, int y) { return 3 * (y * nx + x); }
+
 int main() {
-    int nx = 1200;
-    int ny = 800;
-    int ns = 10;
-    std::ofstream out("output.ppm");
-    out << "P3\n" << nx << " " << ny << "\n255\n";
     hitable *list[5];
     float R = cos(M_PI/4);
     list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
@@ -105,6 +106,8 @@ int main() {
 
     camera cam(lookfrom, lookat, vec3(0,1,0), 20, float(nx)/float(ny), aperture, dist_to_focus);
 
+    float* image = new float[nx * ny * 3];
+
     for (int j = ny-1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
             vec3 col(0, 0, 0);
@@ -116,15 +119,32 @@ int main() {
                 col += color(r, world,0);
             }
             col /= float(ns);
-            col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
-            int ir = int(255.99*col[0]);
-            int ig = int(255.99*col[1]);
-            int ib = int(255.99*col[2]);
-            out << ir << " " << ig << " " << ib << "\n";
+            int idx = rgb_index(i, j);
+            image[idx + 0] = col[0];
+            image[idx + 1] = col[1];
+            image[idx + 2] = col[2];
         }
         std::cout << 100.0 * (ny - j) / ny << std::endl;
     }
+
+    for (int i = 0; i < nx*ny * 3; i++) {
+        image[i] = sqrt(image[i]);
+    }
+
+    std::ofstream out("output.ppm");
+    out << "P3\n" << nx << " " << ny << "\n255\n";
+    for (int j = ny-1; j >= 0; j--) {
+        for (int i = 0; i < nx; i++) {
+            int idx = rgb_index(i, j);
+            int ir = int(255.99*image[idx+0]);
+            int ig = int(255.99*image[idx+1]);
+            int ib = int(255.99*image[idx+2]);
+            out << ir << " " << ig << " " << ib << "\n";
+        }
+    }
     out.close();
+
+    delete[] image;
 }
 
 
