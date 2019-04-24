@@ -15,6 +15,9 @@
 
 #include <random>
 #include <fstream>
+#include <functional>
+
+using std::function;
 
 #ifdef WIN32
 using std::default_random_engine;
@@ -90,7 +93,7 @@ hitable *random_scene() {
 
 const int nx = 1200;
 const int ny = 800;
-const int ns = 10;
+const int ns = 1;
 
 inline int rgb_index(int x, int y) { return 3 * (y * nx + x); }
 
@@ -111,18 +114,19 @@ int main() {
     float aperture = 0.1;
 
     camera cam(lookfrom, lookat, vec3(0,1,0), 20, float(nx)/float(ny), aperture, dist_to_focus);
+    camera* cam_ptr = &cam;
 
     float* image = new float[nx * ny * 3];
 
-    for (int j = ny-1; j >= 0; j--) {
+    function<void(int line)> render_scanline = [=](int j) {
         for (int i = 0; i < nx; i++) {
             vec3 col(0, 0, 0);
-            for (int s=0; s < ns; s++) {
+            for (int s = 0; s < ns; s++) {
                 float u = float(i + drand48()) / float(nx);
                 float v = float(j + drand48()) / float(ny);
-                ray r = cam.get_ray(u, v);
+                ray r = cam_ptr->get_ray(u, v);
                 vec3 p = r.point_at_parameter(2.0);
-                col += color(r, world,0);
+                col += color(r, world, 0);
             }
             col /= float(ns);
             int idx = rgb_index(i, j);
@@ -130,6 +134,10 @@ int main() {
             image[idx + 1] = col[1];
             image[idx + 2] = col[2];
         }
+    };
+
+    for (int j = ny-1; j >= 0; j--) {
+        render_scanline(j);
         std::cout << 100.0 * (ny - j) / ny << std::endl;
     }
 
