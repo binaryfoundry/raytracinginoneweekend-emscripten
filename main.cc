@@ -95,11 +95,42 @@ const int nx = 1200;
 const int ny = 800;
 const int ns = 1;
 
-inline int rgb_index(int x, int y) { return 3 * (y * nx + x); }
+inline int rgb_index(int x, int y)  { return 3 * (y * nx + x); }
 
 #ifdef __EMSCRIPTEN__
 function<void()> update;
 void loop() { update(); }
+
+EM_JS(void, canvas_setup, (int nx, int ny), {
+    var ctx = window.ctx;
+    ctx.canvas.width = nx;
+    ctx.canvas.height = ny;
+    var imageData = ctx.createImageData(nx, ny);
+    var imageCanvas = document.createElement('canvas');
+    imageCanvas.width = nx;
+    imageCanvas.height = ny;
+    window.imageData = imageData;
+    window.imageCanvas = imageCanvas;
+});
+
+EM_JS(void, canvas_draw_data, (int* image, int nx, int ny), {
+    var ctx = window.ctx;
+    var imageData = window.imageData;
+    var imageCanvas = window.imageCanvas;
+    for (var y = 0; y < ny; y++) {
+        for (var x = 0; x < nx; x++) {
+            var i = 4 * (y * nx + x); // 4 = canvas data pitch
+            var j = 3 * 4 * (((ny-1)-y) * nx + x); // 4 = sizeof(int)
+            imageData.data[i + 0] = HEAP32[(image + j + 0) >> 2];
+            imageData.data[i + 1] = HEAP32[(image + j + 4) >> 2];
+            imageData.data[i + 2] = HEAP32[(image + j + 8) >> 2];
+            imageData.data[i + 3] = 255;
+        }
+    }
+    ctx.putImageData(window.imageData, 0, 0);
+    var imageCanvas = window.imageCanvas;
+    imageCanvas.getContext("2d").putImageData(imageData, 0, 0);
+});
 #endif
 
 int main() {
@@ -122,6 +153,11 @@ int main() {
     camera* cam_ptr = &cam;
 
     float* image = new float[nx * ny * 3];
+    int* image_gamma = new int[nx * ny * 3];
+
+    for (int i = 0; i < nx * ny * 3; i++) {
+        image_gamma[i] = 128;
+    }
 
     function<void(int line)> render_scanline = [=](int j) {
         for (int i = 0; i < nx; i++) {
@@ -138,15 +174,21 @@ int main() {
             image[idx + 0] = col[0];
             image[idx + 1] = col[1];
             image[idx + 2] = col[2];
+            image_gamma[idx + 0] = int(255.99*sqrt(col[0]));
+            image_gamma[idx + 1] = int(255.99*sqrt(col[1]));
+            image_gamma[idx + 2] = int(255.99*sqrt(col[2]));
         }
-        std::cout << 100.0 * (ny - j) / ny << std::endl;
     };
 
 #ifdef __EMSCRIPTEN__
     int j = ny-1;
+
+    canvas_setup(nx, ny);
+
     update = [&]() {
         if (j < 0) return;
         render_scanline(j--);
+        canvas_draw_data(image_gamma, nx, ny);
     };
 
     emscripten_set_main_loop(loop, 0, 1);
@@ -155,10 +197,7 @@ int main() {
 
     for (int j = ny-1; j >= 0; j--) {
         render_scanline(j);
-    }
-
-    for (int i = 0; i < nx*ny * 3; i++) {
-        image[i] = sqrt(image[i]);
+        std::cout << 100.0 * (ny - j) / ny << std::endl;
     }
 
     std::ofstream out("output.ppm");
@@ -166,9 +205,9 @@ int main() {
     for (int j = ny-1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
             int idx = rgb_index(i, j);
-            int ir = int(255.99*image[idx+0]);
-            int ig = int(255.99*image[idx+1]);
-            int ib = int(255.99*image[idx+2]);
+            int ir = image_gamma[idx+0];
+            int ig = image_gamma[idx+1];
+            int ib = image_gamma[idx+2];
             out << ir << " " << ig << " " << ib << "\n";
         }
     }
