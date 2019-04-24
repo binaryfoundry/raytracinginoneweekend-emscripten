@@ -14,10 +14,13 @@
 #endif
 
 #include <random>
+#include <thread>
+#include <algorithm>
 #include <fstream>
 #include <functional>
 
 using std::function;
+using std::thread;
 
 #ifdef WIN32
 using std::default_random_engine;
@@ -39,6 +42,8 @@ inline float drand48() { return distribution(generator); }
 #include "float.h"
 #include "camera.h"
 #include "material.h"
+
+#include "worker.h"
 
 vec3 color(const ray& r, hitable *world, int depth) {
     hit_record rec;
@@ -99,6 +104,7 @@ inline int rgb_index(int x, int y) { return 3 * (y * nx + x); }
 inline int index(int x, int y) { return y * nx + x; }
 
 int frames_count = 0;
+int vertical_scan_position = 0;
 
 #ifdef __EMSCRIPTEN__
 function<void()> update;
@@ -137,6 +143,10 @@ EM_JS(void, canvas_draw_data, (int* image, int nx, int ny), {
 #endif
 
 int main() {
+    int threads = std::min((int)thread::hardware_concurrency(), 8);
+    cout << "hardware_concurrency: " << threads << std::endl;
+    WorkerGroup scanline_workers;
+
     hitable *list[5];
     float R = cos(M_PI/4);
     list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
@@ -168,7 +178,8 @@ int main() {
         image_sample_count[0] = 0;
     }
 
-    function<void(int line)> render_scanline = [=](int j) {
+    function<void(int line)> render_scanline = [=](int scan_line) {
+        int j = vertical_scan_position - scan_line;
         for (int i = 0; i < nx; i++) {
             float u = float(i + drand48()) / float(nx);
             float v = float(j + drand48()) / float(ny);
@@ -192,19 +203,28 @@ int main() {
         }
     };
 
+    for (int n = 0; n < threads; ++n)
+    {
+        scanline_workers.AddWorker([=] {
+            render_scanline(n);
+        });
+    }
+
 #ifdef __EMSCRIPTEN__
-    int j = ny-1;
+    vertical_scan_position = ny - 1;
 
     canvas_setup(nx, ny);
 
     update = [&]() {
-        if (j < 0) {
+        if (vertical_scan_position < 0) {
             frames_count++;
-            j = ny - 1;
+            vertical_scan_position = ny - 1;
         }
 
-        render_scanline(j--);
+        scanline_workers.Run();
+
         canvas_draw_data(image_gamma, nx, ny);
+        vertical_scan_position -= threads;
     };
 
     emscripten_set_main_loop(loop, 0, 1);
@@ -212,8 +232,9 @@ int main() {
 #else // other platforms
 
     for (int i = 0; i < max_iterations; i++) {
-        for (int j = ny - 1; j >= 0; j--) {
-            render_scanline(j);
+        for (int j = ny - 1; j >= 0; j-=threads) {
+            vertical_scan_position = j;
+            scanline_workers.Run();
             std::cout << frames_count << "/" << max_iterations << ": ";
             std::cout << 100.0 * (ny - j) / ny << "%" << std::endl;
         }
@@ -234,6 +255,7 @@ int main() {
     out.close();
 #endif
 
+    scanline_workers.Terminate();
     delete[] image;
 }
 

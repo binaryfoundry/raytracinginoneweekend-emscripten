@@ -1,4 +1,4 @@
-Ray Tracing in One Weekend (Emscripten/Windows MSVC)
+Threaded Ray Tracing in One Weekend (Emscripten/Windows MSVC)
 ====================================================================================================
 
 # New Builds
@@ -12,6 +12,7 @@ Ray Tracing in One Weekend (Emscripten/Windows MSVC)
 ### Other Updates
 
 * Progressive scan rendering.
+* Concurrency, scanline per thread.
 
 ![Ray Tracing in One Weekend](./RTOneWeekend.jpg)
 
