@@ -10,7 +10,7 @@
 //==================================================================================================
 
 #ifndef MATERIALH
-#define MATERIALH 
+#define MATERIALH
 
 struct hit_record;
 
@@ -32,7 +32,7 @@ bool refract(const vec3& v, const vec3& n, float ni_over_nt, vec3& refracted) {
         refracted = ni_over_nt*(uv - n*dt) - n*sqrt(discriminant);
         return true;
     }
-    else 
+    else
         return false;
 }
 
@@ -82,14 +82,14 @@ class metal : public material {
         float fuzz;
 };
 
-class dielectric : public material { 
+class dielectric : public material {
     public:
         dielectric(float ri) : ref_idx(ri) {}
         virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const  {
              vec3 outward_normal;
              vec3 reflected = reflect(r_in.direction(), rec.normal);
              float ni_over_nt;
-             attenuation = vec3(1.0, 1.0, 1.0); 
+             attenuation = vec3(1.0, 1.0, 1.0);
              vec3 refracted;
              float reflect_prob;
              float cosine;
@@ -105,13 +105,13 @@ class dielectric : public material {
                   ni_over_nt = 1.0 / ref_idx;
                   cosine = -dot(r_in.direction(), rec.normal) / r_in.direction().length();
              }
-             if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) 
+             if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted))
                 reflect_prob = schlick(cosine, ref_idx);
-             else 
+             else
                 reflect_prob = 1.0;
-             if (drand48() < reflect_prob) 
+             if (drand48() < reflect_prob)
                 scattered = ray(rec.p, reflected);
-             else 
+             else
                 scattered = ray(rec.p, refracted);
              return true;
         }
