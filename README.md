@@ -1,5 +1,17 @@
-Ray Tracing in One Weekend
+Ray Tracing in One Weekend (Emscripten/Windows MSVC)
 ====================================================================================================
+
+# New Builds
+
+## Emscripten Build
+* "make-web.py" and "run-web.py", http://localhost:8080/bin/web/rtow.html
+
+## Windows Build
+* "make-win.bat" generates Visual Studio project in bin directory.
+
+### Other Updates
+
+* Progressive scan rendering.
 
 ![Ray Tracing in One Weekend](./RTOneWeekend.jpg)
 
