@@ -9,6 +9,20 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include <random>
+
+using std::default_random_engine;
+using std::uniform_real_distribution;
+
+default_random_engine generator;
+uniform_real_distribution<double> distribution(0.0, 1.0);
+
+inline float drand48() { return distribution(generator); }
+
+#ifndef M_PI
+#    define M_PI 3.14159265358979323846
+#endif
+
 #include <iostream>
 #include "sphere.h"
 #include "hitable_list.h"
@@ -16,10 +30,9 @@
 #include "camera.h"
 #include "material.h"
 
-
 vec3 color(const ray& r, hitable *world, int depth) {
     hit_record rec;
-    if (world->hit(r, 0.001, MAXFLOAT, rec)) { 
+    if (world->hit(r, 0.001, FLT_MAX, rec)) {
         ray scattered;
         vec3 attenuation;
         if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
