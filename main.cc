@@ -176,6 +176,7 @@ int main() {
 
     function<void(int line)> render_scanline = [=](int scan_line) {
         int j = vertical_scan_position - scan_line;
+        if (j < 0) return;
         for (int i = 0; i < nx; i++) {
             float u = float(i + drand48()) / float(nx);
             float v = float(j + drand48()) / float(ny);
