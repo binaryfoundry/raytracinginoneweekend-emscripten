@@ -6,6 +6,10 @@ Threaded Ray Tracing in One Weekend (Emscripten/Windows MSVC)
 ## Emscripten Build
 * "make-web.py" and "run-web.py", http://localhost:8080/bin/web/rtow.html
 
+### Demo
+
+https://blockulator.github.io/rtow/
+
 ## Windows Build
 * "make-win.bat" generates Visual Studio project in bin directory.
 
