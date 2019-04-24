@@ -97,6 +97,11 @@ const int ns = 1;
 
 inline int rgb_index(int x, int y) { return 3 * (y * nx + x); }
 
+#ifdef __EMSCRIPTEN__
+function<void()> update;
+void loop() { update(); }
+#endif
+
 int main() {
     hitable *list[5];
     float R = cos(M_PI/4);
@@ -134,14 +139,24 @@ int main() {
             image[idx + 1] = col[1];
             image[idx + 2] = col[2];
         }
+        std::cout << 100.0 * (ny - j) / ny << std::endl;
     };
+
+#ifdef __EMSCRIPTEN__
+    int j = ny-1;
+    update = [&]() {
+        if (j < 0) return;
+        render_scanline(j--);
+    };
+
+    emscripten_set_main_loop(loop, 0, 1);
+
+#else // other platforms
 
     for (int j = ny-1; j >= 0; j--) {
         render_scanline(j);
-        std::cout << 100.0 * (ny - j) / ny << std::endl;
     }
 
-#ifndef __EMSCRIPTEN__
     for (int i = 0; i < nx*ny * 3; i++) {
         image[i] = sqrt(image[i]);
     }
