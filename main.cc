@@ -93,9 +93,12 @@ hitable *random_scene() {
 
 const int nx = 1200;
 const int ny = 800;
-const int ns = 1;
+const int max_iterations = 10; // not checked on web
 
-inline int rgb_index(int x, int y)  { return 3 * (y * nx + x); }
+inline int rgb_index(int x, int y) { return 3 * (y * nx + x); }
+inline int index(int x, int y) { return y * nx + x; }
+
+int frames_count = 0;
 
 #ifdef __EMSCRIPTEN__
 function<void()> update;
@@ -154,29 +157,38 @@ int main() {
 
     float* image = new float[nx * ny * 3];
     int* image_gamma = new int[nx * ny * 3];
+    int* image_sample_count = new int[nx * ny];
 
     for (int i = 0; i < nx * ny * 3; i++) {
+        image[i] = 0;
         image_gamma[i] = 128;
+    }
+
+    for (int i = 0; i < nx * ny; i++) {
+        image_sample_count[0] = 0;
     }
 
     function<void(int line)> render_scanline = [=](int j) {
         for (int i = 0; i < nx; i++) {
-            vec3 col(0, 0, 0);
-            for (int s = 0; s < ns; s++) {
-                float u = float(i + drand48()) / float(nx);
-                float v = float(j + drand48()) / float(ny);
-                ray r = cam_ptr->get_ray(u, v);
-                vec3 p = r.point_at_parameter(2.0);
-                col += color(r, world, 0);
-            }
-            col /= float(ns);
-            int idx = rgb_index(i, j);
-            image[idx + 0] = col[0];
-            image[idx + 1] = col[1];
-            image[idx + 2] = col[2];
-            image_gamma[idx + 0] = int(255.99*sqrt(col[0]));
-            image_gamma[idx + 1] = int(255.99*sqrt(col[1]));
-            image_gamma[idx + 2] = int(255.99*sqrt(col[2]));
+            float u = float(i + drand48()) / float(nx);
+            float v = float(j + drand48()) / float(ny);
+            ray ry = cam_ptr->get_ray(u, v);
+            vec3 p = ry.point_at_parameter(2.0);
+            vec3 col = color(ry, world, 0);
+
+            int idx = index(i, j);
+            int idx_rgb = rgb_index(i, j);
+            int n_samples = image_sample_count[idx]+1;
+            float r = image[idx_rgb + 0] + col[0];
+            float g = image[idx_rgb + 1] + col[1];
+            float b = image[idx_rgb + 2] + col[2];
+            image[idx_rgb + 0] = r;
+            image[idx_rgb + 1] = g;
+            image[idx_rgb + 2] = b;
+            image_gamma[idx_rgb + 0] = int(255.99*sqrt(r / n_samples));
+            image_gamma[idx_rgb + 1] = int(255.99*sqrt(g / n_samples));
+            image_gamma[idx_rgb + 2] = int(255.99*sqrt(b / n_samples));
+            image_sample_count[idx] = n_samples;
         }
     };
 
@@ -186,7 +198,11 @@ int main() {
     canvas_setup(nx, ny);
 
     update = [&]() {
-        if (j < 0) return;
+        if (j < 0) {
+            frames_count++;
+            j = ny - 1;
+        }
+
         render_scanline(j--);
         canvas_draw_data(image_gamma, nx, ny);
     };
@@ -195,9 +211,13 @@ int main() {
 
 #else // other platforms
 
-    for (int j = ny-1; j >= 0; j--) {
-        render_scanline(j);
-        std::cout << 100.0 * (ny - j) / ny << std::endl;
+    for (int i = 0; i < max_iterations; i++) {
+        for (int j = ny - 1; j >= 0; j--) {
+            render_scanline(j);
+            std::cout << frames_count << "/" << max_iterations << ": ";
+            std::cout << 100.0 * (ny - j) / ny << "%" << std::endl;
+        }
+        frames_count++;
     }
 
     std::ofstream out("output.ppm");
