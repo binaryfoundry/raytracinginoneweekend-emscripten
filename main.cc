@@ -9,9 +9,14 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include <random>
 #include <fstream>
 
+#ifdef WIN32
 using std::default_random_engine;
 using std::uniform_real_distribution;
 
@@ -19,6 +24,7 @@ default_random_engine generator;
 uniform_real_distribution<double> distribution(0.0, 1.0);
 
 inline float drand48() { return distribution(generator); }
+#endif
 
 #ifndef M_PI
 #    define M_PI 3.14159265358979323846
@@ -127,6 +133,7 @@ int main() {
         std::cout << 100.0 * (ny - j) / ny << std::endl;
     }
 
+#ifndef __EMSCRIPTEN__
     for (int i = 0; i < nx*ny * 3; i++) {
         image[i] = sqrt(image[i]);
     }
@@ -143,6 +150,7 @@ int main() {
         }
     }
     out.close();
+#endif
 
     delete[] image;
 }

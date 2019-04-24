@@ -8,6 +8,10 @@ set(SRC_DIR "${PROJECT_SOURCE_DIR}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_STANDARD 11)
 
+if (EMSCRIPTEN)
+    add_definitions(-O3)
+endif ()
+
 project(${PROJECT_NAME} C CXX)
 
 file(GLOB SOURCES
@@ -32,3 +36,10 @@ add_executable(
 
 target_link_libraries(
     ${PROJECT_NAME})
+
+if (EMSCRIPTEN)
+    set_target_properties(
+        ${PROJECT_NAME}
+        PROPERTIES SUFFIX ".html"
+        LINK_FLAGS "--bind -s WASM=1 -s NO_EXIT_RUNTIME=1 -s TOTAL_MEMORY=134217728 -s USE_PTHREADS=1 -s PTHREAD_POOL_SIZE=4 -s ASSERTIONS=2 -s --emrun -std=c++11 -O3 --use-preload-plugins --shell-file \"../../shell.html\"")
+endif ()
