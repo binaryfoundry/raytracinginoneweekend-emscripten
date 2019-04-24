@@ -75,6 +75,10 @@
 
       window.onerror = function(event) {
         // TODO: do not warn on ok events like simulating an infinite loop or exitStatus
+        window.canvas.height = 0;
+        setTimeout(function() {
+          alert('Error: WebAssemblyThreads need to be enabled.');
+        }, 300);
         Module.setStatus('Exception thrown, see JavaScript console');
         Module.setStatus = function(text) {
           if (text) Module.printErr('[post-exception status] ' + text);
