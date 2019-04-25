@@ -22,21 +22,12 @@
 using std::function;
 using std::thread;
 
-#ifdef _WIN32
-using std::default_random_engine;
-using std::uniform_real_distribution;
-
-default_random_engine generator;
-uniform_real_distribution<double> distribution(0.0, 1.0);
-
-inline float drand48() { return distribution(generator); }
-#endif
-
 #ifndef M_PI
 #    define M_PI 3.14159265358979323846
 #endif
 
 #include <iostream>
+#include "random.h"
 #include "sphere.h"
 #include "hitable_list.h"
 #include "float.h"
