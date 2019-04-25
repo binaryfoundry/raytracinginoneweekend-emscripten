@@ -5,6 +5,7 @@
 #include <memory>
 #include <queue>
 #include <vector>
+#include <functional>
 
 #include <thread>
 #include <mutex>
@@ -19,6 +20,7 @@ using std::thread;
 using std::mutex;
 using std::condition_variable;
 using std::unique_lock;
+using std::function;
 
 using std::shared_ptr;
 using std::make_shared;

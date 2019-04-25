@@ -9,32 +9,21 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifdef __EMSCRIPTEN__
-#include "canvas.h"
-#endif
-
-#include <random>
-#include <thread>
 #include <algorithm>
 #include <fstream>
-#include <functional>
-
-using std::function;
-using std::thread;
-
-#ifndef M_PI
-#    define M_PI 3.14159265358979323846
-#endif
-
 #include <iostream>
+
 #include "random.h"
 #include "sphere.h"
 #include "hitable_list.h"
 #include "float.h"
 #include "camera.h"
 #include "material.h"
-
 #include "worker.h"
+
+#ifdef __EMSCRIPTEN__
+#include "canvas.h"
+#endif
 
 vec3 color(const ray& r, hitable *world, int depth) {
     hit_record rec;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <random>
+
 #ifdef _WIN32
 using std::default_random_engine;
 using std::uniform_real_distribution;
