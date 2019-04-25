@@ -22,7 +22,7 @@
 using std::function;
 using std::thread;
 
-#ifdef WIN32
+#ifdef _WIN32
 using std::default_random_engine;
 using std::uniform_real_distribution;
 
