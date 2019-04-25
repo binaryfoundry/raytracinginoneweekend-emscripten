@@ -122,14 +122,14 @@ EM_JS(void, canvas_setup, (int nx, int ny), {
     window.imageCanvas = imageCanvas;
 });
 
-EM_JS(void, canvas_draw_data, (int* image, int nx, int ny), {
+EM_JS(void, canvas_draw_data, (int* image, int nx, int ny, int ypos, int count), {
     var ctx = window.ctx;
     var imageData = window.imageData;
     var imageCanvas = window.imageCanvas;
-    for (var y = 0; y < ny; y++) {
+    for (var y = ypos; y > Math.max(ypos-count, 0); y--) {
         for (var x = 0; x < nx; x++) {
-            var i = 4 * (y * nx + x); // 4 = canvas data pitch
-            var j = 3 * 4 * (((ny-1)-y) * nx + x); // 4 = sizeof(int)
+            var i = 4 * (((ny - 1) - y) * nx + x); // 4 =  pitch
+            var j = 3 * 4 * (y * nx + x); // 4 = sizeof(int), 3 = pitch
             imageData.data[i + 0] = HEAP32[(image + j + 0) >> 2];
             imageData.data[i + 1] = HEAP32[(image + j + 4) >> 2];
             imageData.data[i + 2] = HEAP32[(image + j + 8) >> 2];
@@ -224,7 +224,7 @@ int main() {
 
         scanline_workers.Run();
 
-        canvas_draw_data(image_gamma, nx, ny);
+        canvas_draw_data(image_gamma, nx, ny, vertical_scan_position, threads);
         vertical_scan_position -= threads;
     };
 
