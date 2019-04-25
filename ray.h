@@ -26,6 +26,6 @@ class ray
         vec3 B;
 };
 
-#endif 
+#endif
 
 
