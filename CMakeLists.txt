@@ -8,6 +8,8 @@ set(SRC_DIR "${PROJECT_SOURCE_DIR}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_STANDARD 11)
 
+
+
 if (EMSCRIPTEN)
     add_definitions(-O3)
 endif ()
@@ -38,6 +40,10 @@ target_link_libraries(
     ${PROJECT_NAME})
 
 if (EMSCRIPTEN)
+    target_compile_options(
+        ${PROJECT_NAME} PUBLIC
+        "-pthread")
+
     set_target_properties(
         ${PROJECT_NAME}
         PROPERTIES SUFFIX ".html"
